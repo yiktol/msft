@@ -1,0 +1,9 @@
+get-service AmazonSSMAgent
+
+get-windowsfeature
+
+cd c:\ProgramData\Amazon\SSM\Logs\
+Get-Content .\errors.log -tail 50 -wait
+
+
+Invoke-RestMethod -uri http://169.254.169.254/latest/meta-data

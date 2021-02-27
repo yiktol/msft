@@ -1,0 +1,16 @@
+{
+    "schemaVersion": "1.0",
+    "description": "Automatic Domain Join Configuration created by EC2 Console.",
+    "runtimeConfig": {
+      "aws:domainJoin": {
+        "properties": {
+          "directoryId": "d-96671d9bff",
+          "directoryName": "et.local",
+          "dnsIpAddresses": [
+            "10.10.22.138",
+            "10.10.12.217"
+          ]
+        }
+      }
+    }
+  }
