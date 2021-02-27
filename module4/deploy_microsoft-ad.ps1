@@ -8,7 +8,7 @@ $privsubnet1a = (Get-EC2Subnet -Filter @{Name="tag:Name"; Values="msft-priv-1a"}
 $privsubnet1b = (Get-EC2Subnet -Filter @{Name="tag:Name"; Values="msft-priv-1b"}).SubnetId
 
 #Get Admin Password from SSM
-$passwd = (Get-SSMParameterValue -Name /et.local/Admin  –WithDecryption $true).Parameters.Value
+$passwd = (Get-SSMParameterValue -Name /et.local/AdminPassword  –WithDecryption $true).Parameters.Value
 
 #Deploy AWS Managed AD
 New-DSMicrosoftAD `

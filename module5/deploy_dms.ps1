@@ -48,6 +48,7 @@ Get-DMSReplicationInstance
 
 $passwd = (Get-SSMParameterValue -Name /et.local/AdminPassword  –WithDecryption $true).Parameters.Value
 $user = (Get-SSMParameterValue -Name /et.local/AdminUser  –WithDecryption $true).Parameters.Value
+$saUser = (Get-SSMParameterValue -Name /et.local/saUser –WithDecryption $true).Parameters.Value
 
 #EC2 as Source
 $instandeIP = ((Get-EC2Instance -Filter @{Name="tag:Name";Values="SQLonEC2"}).Instances).PrivateDnsName
@@ -58,7 +59,7 @@ New-DMSEndpoint `
 -ServerName $instandeIP `
 -MicrosoftSQLServerSettings_ServerName "EC2MSSQL" `
 -MicrosoftSQLServerSettings_Port 1433 `
--MicrosoftSQLServerSettings_Username "sa" `
+-MicrosoftSQLServerSettings_Username $saUser `
 -MicrosoftSQLServerSettings_Password $passwd `
 -MicrosoftSQLServerSettings_DatabaseName "BikeStores" 
 
