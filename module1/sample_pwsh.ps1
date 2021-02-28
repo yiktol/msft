@@ -33,7 +33,7 @@ Set-AWSCredential -AccessKey <AccessKey> -SecretKey <SecretKey> -StoreAs default
 Remove-AWSCredentialProfile -ProfileName default
 
 #Initialize AWS Default Configuration
-Initialize-AWSDefaultConfiguration -Region ap-southeast-1 `
+Initialize-AWSDefaultConfiguration -Region <region> `
                                    -AccessKey <AccessKey>`
                                    -SecretKey <SecretKety>
 

@@ -1,5 +1,5 @@
 #Import Helper Functions
-. ./helper.ps1
+. ../others/helper.ps1
 
 #Import AWS PowerShell Module
 Import-Module -Name AWSPowerShell.NetCore

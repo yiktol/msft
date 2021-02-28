@@ -44,9 +44,6 @@ New-EC2Subnet `
 
 $privsubnet1a = (Get-EC2Subnet -Filter @{Name="tag:Name"; Values="msft-priv-1a"}).SubnetId
 
-
-
-
 # Create Public Subnet in AZ 1b
 New-EC2Subnet `
 -VpcId $vpcId `
@@ -60,9 +57,6 @@ $pubsubnet1b = (Get-EC2Subnet -Filter @{Name="tag:Name"; Values="msft-pub-1b"}).
 Edit-EC2SubnetAttribute `
 -SubnetId $pubsubnet1b `
 -MapPublicIpOnLaunch $true
-
-
-
 
 # Create Private Subnet in AZ 1b
 New-EC2Subnet `
