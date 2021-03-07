@@ -36,6 +36,11 @@ Remove-EC2SecurityGroup `
 -GroupId $sgId `
 -Force 
 
+$subnetgroup = 'msft-public-subnet'
+Remove-RDSDBSubnetGroup `
+-DBSubnetGroupName $subnetgroup `
+-Force
+
 #----------------------------------------------------------------------
 #Clean-Up SQL on EC2
 #----------------------------------------------------------------------
