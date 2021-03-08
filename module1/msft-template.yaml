@@ -419,25 +419,7 @@ Resources:
    Type: AWS::EC2::EIP
    Properties:
       Domain: vpc
-  RDGWInstance: 
-    Type: AWS::EC2::Instance
-    Properties: 
-      ImageId: "ami-0c65e8b52315f51f8"
-      KeyName: 
-        Ref: "KeyName"
-      IamInstanceProfile: "EC2SSMCoreRole"
-      NetworkInterfaces: 
-        - AssociatePublicIpAddress: "true"
-          DeviceIndex: "0"
-          GroupSet: 
-            - Ref: "RDPGWSecurityGroup"
-          SubnetId: 
-            Ref: "PublicSubnetAZ1"
-      Tags:
-        - Key: Name
-          Value: !Sub ${Environment}-RDGW
-        - Key: Environment
-          Value: !Ref Environment
+
 
 Outputs:
   VpcId:

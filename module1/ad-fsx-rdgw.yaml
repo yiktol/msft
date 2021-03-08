@@ -24,7 +24,7 @@ Parameters:
     Description: Please enter the KeyName
     Type: "AWS::EC2::KeyPair::KeyName"  
   DomainName:
-    Description: Please enter the Adctive Directory Domain Name
+    Description: Please enter the Active Directory Domain Name
     Type: String
     Default: "et.local"
 
@@ -75,7 +75,7 @@ Resources:
     Type: AWS::DirectoryService::MicrosoftAD
     Properties:
       Edition: "Standard"
-      Name: "et.local"
+      Name: !Ref DomainName
       Password: "{{resolve:ssm-secure:/et.local/AdminPassword:1}}"
       ShortName: "ET"
       VpcSettings:
@@ -113,12 +113,12 @@ Resources:
         DeploymentType: MULTI_AZ_1
         PreferredSubnetId: 
           Fn::ImportValue: 
-            !Sub "${Environment}-PrivateSubnetAZ1Id"
+            !Sub "${Environment}-PublicSubnetAZ1Id"
         CopyTagsToBackups: false
   DhcpOptions:
     Type: AWS::EC2::DHCPOptions
     Properties:
-      DomainName: et.local
+      DomainName: !Ref DomainName
       DomainNameServers: !GetAtt ActiveDirectory.DnsIpAddresses
       NtpServers: !GetAtt ActiveDirectory.DnsIpAddresses
       NetbiosNameServers: !GetAtt ActiveDirectory.DnsIpAddresses
