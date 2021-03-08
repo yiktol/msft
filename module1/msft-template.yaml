@@ -1,0 +1,490 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+  This template deploys a VPC.
+
+Mappings:
+  AWSRegionAndEnvironmentToVpcCidr:
+    ap-northeast-1:
+      Development: 10.0.0.0/16
+      Staging: 10.0.0.0/16
+      Production: 10.0.0.0/16
+    ap-northeast-2:
+      Development: 10.1.0.0/16
+      Staging: 10.1.0.0/16
+      Production: 10.1.0.0/16
+    ap-south-1:
+      Development: 10.2.0.0/16
+      Staging: 10.2.0.0/16
+      Production: 10.2.0.0/16
+    ap-southeast-1:
+      Development: 10.3.0.0/16
+      Staging: 10.3.0.0/16
+      Production: 10.3.0.0/16
+    ap-southeast-2:
+      Development: 10.4.0.0/16
+      Staging: 10.4.0.0/16
+      Production: 10.4.0.0/16
+    ap-east-1:
+      Development: 10.5.0.0/16
+      Staging: 10.5.0.0/16
+      Production: 10.5.0.0/16
+    eu-central-1:
+      Development: 10.6.0.0/16
+      Staging: 10.6.0.0/16
+      Production: 10.6.0.0/16
+    eu-west-1:
+      Development: 10.7.0.0/16
+      Staging: 10.7.0.0/16
+      Production: 10.7.0.0/16
+    eu-west-2:
+      Development: 10.8.0.0/16
+      Staging: 10.8.0.0/16
+      Production: 10.8.0.0/16
+    eu-west-3:
+      Development: 10.9.0.0/16
+      Staging: 10.9.0.0/16
+      Production: 10.9.0.0/16
+    us-east-1:
+      Development: 10.10.0.0/16
+      Staging: 10.10.0.0/16
+      Production: 10.10.0.0/16
+    us-east-2:
+      Development: 10.11.0.0/16
+      Staging: 10.11.0.0/16
+      Production: 10.11.0.0/16
+    us-west-1:
+      Development: 10.12.0.0/16
+      Staging: 10.12.0.0/16
+      Production: 10.12.0.0/16
+    us-west-2:
+      Development: 10.13.0.0/16
+      Staging: 10.13.0.0/16
+      Production: 10.13.0.0/16
+
+Parameters:
+  Environment:
+    Description:
+      Please enter an environment resource tag to improve cost and usage reports
+    Type: String
+    Default: Development
+    AllowedValues:
+      - Development
+      - Staging
+      - Production
+
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock:
+        Fn::FindInMap:
+          - AWSRegionAndEnvironmentToVpcCidr
+          - !Ref AWS::Region
+          - !Ref Environment
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-VPC
+        - Key: Environment
+          Value: !Ref Environment
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} Internet Gateway
+        - Key: Environment
+          Value: !Ref Environment
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref Vpc
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} VPC Public Route Table
+        - Key: Environment
+          Value: !Ref Environment
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  PublicSubnetAZ1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: !Ref AWS::Region
+      CidrBlock:
+        Fn::Select:
+          - 1
+          - Fn::Cidr:
+              - Fn::GetAtt: Vpc.CidrBlock
+              - 20
+              - 8
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Public Subnet (AZ1)
+        - Key: Environment
+          Value: !Ref Environment
+  PublicSubnetAZ2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: !Ref AWS::Region
+      CidrBlock:
+        Fn::Select:
+          - 2
+          - Fn::Cidr:
+              - Fn::GetAtt: Vpc.CidrBlock
+              - 20
+              - 8
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Public Subnet (AZ2)
+        - Key: Environment
+          Value: !Ref Environment
+  PublicSubnetAZ3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone:
+        Fn::Select:
+          - 2
+          - Fn::GetAZs: !Ref AWS::Region
+      CidrBlock:
+        Fn::Select:
+          - 3
+          - Fn::Cidr:
+              - Fn::GetAtt: Vpc.CidrBlock
+              - 20
+              - 8
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Public Subnet (AZ3)
+        - Key: Environment
+          Value: !Ref Environment
+  PrivateSubnetAZ1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: !Ref AWS::Region
+      CidrBlock:
+        Fn::Select:
+          - 11
+          - Fn::Cidr:
+              - Fn::GetAtt: Vpc.CidrBlock
+              - 20
+              - 8
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Private Subnet (AZ1)
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: apiname
+          Value: !Sub ${Environment}-priv-net-1a
+  PrivateSubnetAZ2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: !Ref AWS::Region
+      CidrBlock:
+        Fn::Select:
+          - 12
+          - Fn::Cidr:
+              - Fn::GetAtt: Vpc.CidrBlock
+              - 20
+              - 8
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Private Subnet (AZ2)
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: apiname
+          Value: !Sub ${Environment}-priv-net-1b
+  PrivateSubnetAZ3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone:
+        Fn::Select:
+          - 2
+          - Fn::GetAZs: !Ref AWS::Region
+      CidrBlock:
+        Fn::Select:
+          - 13
+          - Fn::Cidr:
+              - Fn::GetAtt: Vpc.CidrBlock
+              - 20
+              - 8
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Private Subnet (AZ3)
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: apiname
+          Value: !Sub ${Environment}-priv-net-1c          
+  PrivateRouteTableAZ1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} VPC AZ1 Private Route Table
+        - Key: Environment
+          Value: !Ref Environment
+  PrivateRouteTableAZ2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} VPC AZ2 Private Route Table
+        - Key: Environment
+          Value: !Ref Environment
+  PrivateRouteTableAZ3:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} VPC AZ3 Private Route Table
+        - Key: Environment
+          Value: !Ref Environment
+  PrivateRouteAZ1:
+   Type: AWS::EC2::Route
+   Properties:
+      RouteTableId:
+         Ref: PrivateRouteTableAZ1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+         Ref: NATGatewayAZ1
+  PrivateRouteAZ2:
+   Type: AWS::EC2::Route
+   Properties:
+      RouteTableId:
+         Ref: PrivateRouteTableAZ2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+         Ref: NATGatewayAZ1  
+  PrivateRouteAZ3:
+   Type: AWS::EC2::Route
+   Properties:
+      RouteTableId:
+         Ref: PrivateRouteTableAZ3
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+         Ref: NATGatewayAZ1   
+  PublicSubnetAZ1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetAZ1
+  PublicSubnetAZ2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetAZ2
+  PublicSubnetAZ3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetAZ3
+  PrivateSubnetAZ1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableAZ1
+      SubnetId: !Ref PrivateSubnetAZ1
+  PrivateSubnetAZ2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableAZ2
+      SubnetId: !Ref PrivateSubnetAZ2
+  PrivateSubnetAZ3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableAZ3
+      SubnetId: !Ref PrivateSubnetAZ3
+  RDPGWSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable RDP access to RDP Gateway
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3389
+          ToPort: 3389
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: HTTP/S and RDP Security Group
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: apiname
+          Value: !Sub ${Environment}-http-rdp-sg
+  MSSQLSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SQL access to DB
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 1443
+          ToPort: 1443
+          CidrIp: !GetAtt Vpc.CidrBlock
+        - IpProtocol: tcp
+          FromPort: 3389
+          ToPort: 3389
+          CidrIp: !GetAtt Vpc.CidrBlock
+      Tags:
+        - Key: Name
+          Value: MS SQL Security Group
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: apiname
+          Value: !Sub ${Environment}-mssql-sg
+  FSxSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable FSx access to the Vpc CIDR
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 445
+          ToPort: 445
+          CidrIp: !GetAtt Vpc.CidrBlock
+        - IpProtocol: tcp
+          FromPort: 5985
+          ToPort: 5985
+          CidrIp: !GetAtt Vpc.CidrBlock
+      Tags:
+        - Key: Name
+          Value: FSx Security Group
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: apiname
+          Value: !Sub ${Environment}-fsx-sg
+  NATGatewayAZ1:
+   Type: AWS::EC2::NatGateway
+   Properties:
+      AllocationId:
+         Fn::GetAtt:
+         - ElasticIPAZ1
+         - AllocationId
+      SubnetId:
+         Ref: PublicSubnetAZ1
+      Tags:
+        - Key: Name
+          Value: NAT Gateway (AZ1)
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: apiname
+          Value: !Sub ${Environment}-priv-nat-1a  
+  ElasticIPAZ1:
+   DependsOn: InternetGatewayAttachment
+   Type: AWS::EC2::EIP
+   Properties:
+      Domain: vpc
+  RDGWInstance: 
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: "ami-0c65e8b52315f51f8"
+      KeyName: 
+        Ref: "KeyName"
+      IamInstanceProfile: "EC2SSMCoreRole"
+      NetworkInterfaces: 
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          GroupSet: 
+            - Ref: "RDPGWSecurityGroup"
+          SubnetId: 
+            Ref: "PublicSubnetAZ1"
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-RDGW
+        - Key: Environment
+          Value: !Ref Environment
+
+Outputs:
+  VpcId:
+    Description: VPC id
+    Value: !Ref Vpc
+    Export:
+      Name: !Sub "${Environment}-VpcId"
+  VpcCidrBlock:
+    Description: VPC's CIDR block
+    Value:
+      Fn::GetAtt:
+        - Vpc
+        - CidrBlock
+    Export:
+      Name: !Sub "${Environment}-VpcCidrBlock"
+  PublicRouteTableId:
+    Description: VPC's public route table id
+    Value: !Ref PublicRouteTable
+    Export:
+      Name: !Sub "${Environment}-PublicRouteTableId"
+  PrivateSubnetAZ1Id:
+    Description: Private Subnet AZ1 Id
+    Value: !Ref PrivateSubnetAZ1
+    Export:
+      Name: !Sub "${Environment}-PrivateSubnetAZ1Id"
+  PrivateSubnetAZ2Id:
+    Description: Private Subnet AZ2 Id
+    Value: !Ref PrivateSubnetAZ2
+    Export:
+      Name: !Sub "${Environment}-PrivateSubnetAZ2Id"
+  PrivateSubnetAZ3Id:
+    Description: Private Subnet AZ3 Id
+    Value: !Ref PrivateSubnetAZ3
+    Export:
+      Name: !Sub "${Environment}-PrivateSubnetAZ3Id"
+  RDPGWSecurityGroupId:
+    Description: RDPGW Security Group Id
+    Value: !Ref RDPGWSecurityGroup
+    Export:
+      Name: !Sub "${Environment}-RDPGWSecurityGroupId"
+  MSSQLSecurityGroupId:
+    Description: MS SQL Security Group Id
+    Value: !Ref MSSQLSecurityGroup
+    Export:
+      Name: !Sub "${Environment}-MSSQLSecurityGroupId"
+  FSxSecurityGroupId:
+    Description: FSx Security Group Id
+    Value: !Ref FSxSecurityGroup
+    Export:
+      Name: !Sub "${Environment}-FSxSecurityGroupId"

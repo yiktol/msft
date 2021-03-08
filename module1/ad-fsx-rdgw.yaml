@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: This template deploys a VPC.
+
+Parameters:
+  Environment:
+    Description: Please enter an environment resource tag to improve cost and usage reports
+    Type: String
+    Default: Development
+    AllowedValues:
+      - Development
+      - Staging
+      - Production
+  KeyName:
+    Description: Please enter the KeyName
+    Type: "AWS::EC2::KeyPair::KeyName"  
+  DomainName:
+    Description: Please enter the Adctive Directory Domain Name
+    Type: String
+    Default: "et.local"
+
+Resources:
+  RDGWInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: "ami-0c65e8b52315f51f8"
+      KeyName: !Ref KeyName
+      IamInstanceProfile: "EC2SSMCoreRole"
+      InstanceType: "t3.medium"
+      SsmAssociations:
+      - DocumentName:
+          Ref: ADJoinDocument
+        AssociationParameters:
+        - Key: directoryId
+          Value:
+          - !Ref ActiveDirectory
+        - Key: directoryName
+          Value:
+          - !Ref DomainName
+        - Key: dnsIpAddresses
+          Value:
+            Fn::GetAtt:
+            - ActiveDirectory
+            - DnsIpAddresses
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          GroupSet:
+            - Fn::ImportValue: 
+                !Sub "${Environment}-RDPGWSecurityGroupId"
+          SubnetId:
+            Fn::ImportValue: 
+                !Sub "${Environment}-PrivateSubnetAZ1Id"
+      UserData: "<powershell> Install-WindowsFeature RSAT-AD-Tools -IncludeAllSubFeature <powershell>"
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-RDGW
+        - Key: Environment
+          Value: !Ref Environment
+  ActiveDirectory:
+    Type: AWS::DirectoryService::MicrosoftAD
+    Properties:
+      Edition: "Standard"
+      Name: "et.local"
+      Password: "{{resolve:ssm-secure:/et.local/AdminPassword:1}}"
+      ShortName: "ET"
+      VpcSettings:
+        SubnetIds:
+          - Fn::ImportValue: 
+              !Sub "${Environment}-PrivateSubnetAZ1Id"
+          - Fn::ImportValue: 
+              !Sub "${Environment}-PrivateSubnetAZ2Id"
+        VpcId:
+          Fn::ImportValue: 
+              !Sub "${Environment}-VpcId"
+  FSxWindowsFileSystem:
+    Type: "AWS::FSx::FileSystem"
+    Properties:
+      FileSystemType: WINDOWS
+      StorageCapacity: 32
+      StorageType: SSD
+      SubnetIds:
+        - Fn::ImportValue: 
+            !Sub "${Environment}-PrivateSubnetAZ1Id"
+        - Fn::ImportValue: 
+            !Sub "${Environment}-PrivateSubnetAZ2Id"
+      SecurityGroupIds:
+        - Fn::ImportValue: 
+            !Sub "${Environment}-FSxSecurityGroupId"
+      Tags:
+        - Key: Name
+          Value: windows
+      WindowsConfiguration:
+        ActiveDirectoryId: !Ref ActiveDirectory
+        ThroughputCapacity: 8
+        Aliases:
+          - files.et.local
+        AutomaticBackupRetentionDays: 0
+        DeploymentType: MULTI_AZ_1
+        PreferredSubnetId: 
+          Fn::ImportValue: 
+            !Sub "${Environment}-PrivateSubnetAZ1Id"
+        CopyTagsToBackups: false
+  DhcpOptions:
+    Type: AWS::EC2::DHCPOptions
+    Properties:
+      DomainName: et.local
+      DomainNameServers: !GetAtt ActiveDirectory.DnsIpAddresses
+      NtpServers: !GetAtt ActiveDirectory.DnsIpAddresses
+      NetbiosNameServers: !GetAtt ActiveDirectory.DnsIpAddresses
+      NetbiosNodeType: 2
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-DhcpOption"
+  VPCDHCPOptionsAssociation:
+    Type: AWS::EC2::VPCDHCPOptionsAssociation
+    Properties:
+      VpcId:
+        - Fn::ImportValue: 
+            !Sub "${Environment}-VpcId"
+      DhcpOptionsId: !Ref DhcpOptions
+  ADJoinDocument:
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: "1.0"
+        description: Join instances to an AWS Directory Service domain.
+        runtimeConfig:
+          aws:domainJoin:
+            properties:
+              directoryId: !Ref ActiveDirectory
+              directoryName: !Ref DomainName
+              dnsIpAddresses: !GetAtt ActiveDirectory.DnsIpAddresses
+
+Outputs:
+  ActiveDirectoryId:
+    Description: Active Directory id
+    Value: !Ref ActiveDirectory
+    Export:
+      Name: !Sub "${Environment}-ActiveDirectoryId"
+  FileSystemId:
+    Value: !Ref FSxWindowsFileSystem
