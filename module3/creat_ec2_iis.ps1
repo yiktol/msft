@@ -1,6 +1,7 @@
 #--------------------------------------------------------------------------------------
 # Deploy Windows 2019 IIS Web Server
 #--------------------------------------------------------------------------------------
+$vpcId = (Get-EC2Vpc -Filter @{Name="tag:Name"; Values="VPC-DEMO"}).VpcId
 
 #Create Security Group
 New-EC2SecurityGroup `
@@ -25,7 +26,7 @@ $privkey = (Get-SSMParameterValue -Name /et.local/PrivateKey  –WithDecryption 
 $ec2profArn = (Get-IAMInstanceProfile -InstanceProfileName 'EC2SSMCoreRole').Arn
 
 New-EC2Instance `
--ImageId "ami-0e5035da109917399" `
+-ImageId "ami-0c65e8b52315f51f8" `
 -MinCount 1 -MaxCount 1 `
 -SubnetId $pubsubnet1a `
 -InstanceType "t3.medium" `

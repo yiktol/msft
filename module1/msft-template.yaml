@@ -463,6 +463,21 @@ Outputs:
     Value: !Ref PrivateSubnetAZ1
     Export:
       Name: !Sub "${Environment}-PrivateSubnetAZ1Id"
+  PublicSubnetAZ1Id:
+    Description: Public Subnet AZ1 Id
+    Value: !Ref PublicSubnetAZ1
+    Export:
+      Name: !Sub "${Environment}-PublicSubnetAZ1Id"
+  PublicSubnetAZ2Id:
+    Description: Public Subnet AZ2 Id
+    Value: !Ref PublicSubnetAZ2
+    Export:
+      Name: !Sub "${Environment}-PublicSubnetAZ2Id"
+  PublicSubnetAZ3Id:
+    Description: Public Subnet AZ3 Id
+    Value: !Ref PublicSubnetAZ3
+    Export:
+      Name: !Sub "${Environment}-PublicSubnetAZ3Id"
   PrivateSubnetAZ2Id:
     Description: Private Subnet AZ2 Id
     Value: !Ref PrivateSubnetAZ2

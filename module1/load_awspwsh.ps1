@@ -31,11 +31,25 @@ $p3.ParameterKey = "DomainName"
 $p3.ParameterValue = "et.local"
 
 New-CFNStack `
--StackName "CPE-Stack" `
+-StackName "MSFT-VPC-Stack" `
 -TemplateURL https://$bucketName.s3-ap-southeast-1.amazonaws.com/templates/msft-template.yaml `
 -Parameter @( $p1 ) 
 
 New-CFNStack `
--StackName "AD-RDGW-FSX-Stack" `
+-StackName "MSFT-AD-RDGW-FSX-Stack" `
 -TemplateURL https://$bucketName.s3-ap-southeast-1.amazonaws.com/templates/ad-fsx-rdgw.yaml `
--Parameter @( $p1, $p2, $p3 ) 
+-Parameter @( $p1, $p2, $p3 ) `
+-Capability CAPABILITY_IAM
+
+
+
+
+Write-S3Object `
+-BucketName $bucketName `
+-Key "templates/test.yaml" `
+-File test.yaml
+
+New-CFNStack `
+-StackName "Test" `
+-TemplateURL https://$bucketName.s3-ap-southeast-1.amazonaws.com/templates/test.yaml `
+-Capability CAPABILITY_IAM
